@@ -1,0 +1,885 @@
+import tkinter as tk
+from tkinter import ttk, messagebox
+
+# ====================================
+# VARIABLES GLOBALES
+# ====================================
+codigoActual = 1000
+productos = []
+clientes = []
+ventas = []
+
+# ====================================
+# CLASES
+# ====================================
+class Producto:
+
+    def __init__(self, codigo, nombre, precio, stock):
+        self.codigo = codigo
+        self.nombre = nombre
+        self.precio = precio
+        self.stock = stock
+
+    def obtenerResultados(self):
+        return f"Código : {self.codigo} | Nombre : {self.nombre} | Precio : {self.precio} | Stock : {self.stock}"
+
+
+class Cliente:
+
+    def __init__(self, dni, nombre, telefono):
+        self.dni = dni
+        self.nombre = nombre
+        self.telefono = telefono
+
+    def obtenerResultados(self):
+        return f"DNI : {self.dni} | Nombre : {self.nombre} | Teléfono : {self.telefono}"
+
+
+class Venta:
+
+    def __init__(self, codigo, producto, cliente, precio, cantidad, subtotal):
+        self.codigo = codigo
+        self.producto = producto
+        self.cliente = cliente
+        self.precio = precio
+        self.cantidad = cantidad
+        self.subtotal = subtotal
+
+    def obtenerResultados(self):
+        return f"Código : {self.codigo} | Producto : {self.producto} | Cliente : {self.cliente} | Precio : {self.precio} | Cantidad : {self.cantidad} | Subtotal : {self.subtotal}"
+
+
+# ====================================
+# FUNCIONES GENERALES
+# ====================================
+def generarCodigo():
+    global codigoActual
+    codigoActual += 1
+    return codigoActual
+
+
+def limpiarPanel():
+    for widget in panel.winfo_children():
+        widget.destroy()
+
+
+def mostrarInicio():
+    limpiarPanel()
+
+    marco = tk.LabelFrame(
+        panel,
+        text="Sistema de Ventas",
+        fg="blue",
+        font=("Arial", 12, "bold"),
+        width=600,
+        height=200
+    )
+    marco.place(x=120, y=120)
+
+    mensaje = tk.Label(
+        marco,
+        text="Haz clic en Productos, Clientes, Ventas o Reporte General",
+        font=("Arial", 12),
+        fg="blue"
+    )
+    mensaje.place(x=60, y=60)
+
+
+def validarNombre(nombre):
+    i = 0
+    while i < len(nombre):
+        if nombre[i].isdigit():
+            return False
+        i += 1
+    return True
+
+
+# ====================================
+# PRODUCTOS
+# ====================================
+def actualizarTablaProductos():
+    for item in tabla.get_children():
+        tabla.delete(item)
+
+    for producto in productos:
+        tabla.insert(
+            "",
+            "end",
+            values=(
+                producto.codigo,
+                producto.nombre,
+                producto.precio,
+                producto.stock
+            )
+        )
+
+    txtNombre.focus()
+
+
+def limpiarCampos():
+    txtCodigo.delete(0, tk.END)
+    txtNombre.set("")
+    txtPrecio.delete(0, tk.END)
+    txtStock.delete(0, tk.END)
+
+
+def agregar():
+    codigo = txtCodigo.get()
+    nombre = txtNombre.get()
+    precio = txtPrecio.get()
+    stock = txtStock.get()
+
+    if nombre == "" or precio == "" or stock == "":
+        messagebox.showerror("Error", "Complete todos los campos")
+        return
+
+    if not validarNombre(nombre):
+        messagebox.showerror("Error", "Nombre inválido")
+        return
+
+    try:
+        precio = float(precio)
+        stock = int(stock)
+
+        producto = Producto(codigo, nombre, precio, stock)
+        productos.append(producto)
+
+        actualizarTablaProductos()
+
+        lstSalida.insert(
+            0,
+            f"Producto {nombre} registrado correctamente"
+        )
+
+        limpiarCampos()
+        txtCodigo.insert(0, generarCodigo())
+
+    except:
+        messagebox.showerror("Error", "Precio o stock inválidos")
+
+
+def eliminar():
+    seleccionado = tabla.selection()
+
+    if seleccionado:
+        indice = tabla.index(seleccionado)
+        productos.pop(indice)
+        actualizarTablaProductos()
+
+
+def editar():
+    seleccionado = tabla.selection()
+
+    if not seleccionado:
+        return
+
+    datos = tabla.item(seleccionado)["values"]
+
+    limpiarCampos()
+    txtCodigo.insert(0, datos[0])
+    txtNombre.set(datos[1])
+    txtPrecio.insert(0, datos[2])
+    txtStock.insert(0, datos[3])
+
+
+def modificar():
+    seleccionado = tabla.selection()
+
+    if not seleccionado:
+        return
+
+    codigo = txtCodigo.get()
+    nombre = txtNombre.get()
+    precio = txtPrecio.get()
+    stock = txtStock.get()
+
+    if nombre == "" or precio == "" or stock == "":
+        messagebox.showerror("Error", "Complete todos los campos")
+        return
+
+    if not validarNombre(nombre):
+        messagebox.showerror("Error", "Nombre inválido")
+        return
+
+    try:
+        precio = float(precio)
+        stock = int(stock)
+        indice = tabla.index(seleccionado)
+
+        productos[indice].codigo = codigo
+        productos[indice].nombre = nombre
+        productos[indice].precio = precio
+        productos[indice].stock = stock
+
+        actualizarTablaProductos()
+        lstSalida.insert(0, f"Producto {nombre} modificado correctamente")
+        limpiarCampos()
+        txtCodigo.insert(0, generarCodigo())
+
+    except:
+        messagebox.showerror("Error", "Precio o stock inválidos")
+
+
+def abrirProductos():
+    global txtCodigo, txtNombre, txtPrecio, txtStock, tabla, lstSalida
+
+    limpiarPanel()
+
+    titulo = tk.Label(
+        panel,
+        text="MANTENIMIENTO DE PRODUCTOS",
+        fg="red",
+        font=("Arial", 16, "bold")
+    )
+    titulo.place(x=250, y=20)
+
+    tk.Label(panel, text="Código :", fg="brown").place(x=500, y=80)
+    txtCodigo = tk.Entry(panel, width=15)
+    txtCodigo.place(x=570, y=80)
+    txtCodigo.insert(0, generarCodigo())
+
+    tk.Label(panel, text="Nombre :", fg="brown").place(x=80, y=120)
+    txtNombre = ttk.Combobox(
+        panel,
+        width=37,
+        state="readonly",
+        values=[
+            "Lavadora",
+            "Refrigeradora",
+            "Microondas",
+            "Licuadora",
+            "Aspiradora"
+        ]
+    )
+    txtNombre.place(x=160, y=120)
+
+    tk.Label(panel, text="Precio :", fg="brown").place(x=80, y=170)
+    txtPrecio = tk.Entry(panel, width=15)
+    txtPrecio.place(x=160, y=170)
+
+    tk.Label(panel, text="Stock :", fg="brown").place(x=420, y=170)
+    txtStock = tk.Entry(panel, width=15)
+    txtStock.place(x=500, y=170)
+
+    tk.Button(panel, text="AGREGAR", width=15, command=agregar).place(x=80, y=240)
+    tk.Button(panel, text="ELIMINAR", width=15, command=eliminar).place(x=260, y=240)
+    tk.Button(panel, text="EDITAR", width=15, command=editar).place(x=440, y=240)
+    tk.Button(panel, text="MODIFICAR", width=15, command=modificar).place(x=620, y=240)
+
+    columnas = ("Codigo", "Nombre", "Precio", "Stock")
+    tabla = ttk.Treeview(panel, columns=columnas, show="headings", height=8)
+
+    for col in columnas:
+        tabla.heading(col, text=col)
+
+    tabla.column("Codigo", width=120)
+    tabla.column("Nombre", width=220)
+    tabla.column("Precio", width=150)
+    tabla.column("Stock", width=150)
+    tabla.place(x=40, y=300)
+
+    lstSalida = tk.Listbox(panel, width=90, height=4)
+    lstSalida.place(x=40, y=500)
+
+    actualizarTablaProductos()
+
+
+# ====================================
+# CLIENTES
+# ====================================
+def actualizarTablaClientes():
+    for item in tablaClientes.get_children():
+        tablaClientes.delete(item)
+
+    for cliente in clientes:
+        tablaClientes.insert(
+            "",
+            "end",
+            values=(
+                cliente.dni,
+                cliente.nombre,
+                cliente.telefono
+            )
+        )
+
+    txtDni.focus()
+
+
+def limpiarCamposCliente():
+    txtDni.delete(0, tk.END)
+    txtCliente.delete(0, tk.END)
+    txtTelefono.delete(0, tk.END)
+
+
+def registrarCliente():
+    dni = txtDni.get()
+    nombre = txtCliente.get()
+    telefono = txtTelefono.get()
+
+    if dni == "" or nombre == "" or telefono == "":
+        messagebox.showerror("Error", "Complete todos los campos")
+        return
+
+    if not dni.isdigit():
+        messagebox.showerror("Error", "DNI inválido")
+        return
+
+    if not validarNombre(nombre):
+        messagebox.showerror("Error", "Nombre inválido")
+        return
+
+    if not telefono.isdigit():
+        messagebox.showerror("Error", "Teléfono inválido")
+        return
+
+    cliente = Cliente(dni, nombre, telefono)
+    clientes.append(cliente)
+
+    actualizarTablaClientes()
+    lstSalidaClientes.insert(0, f"Cliente {nombre} registrado correctamente")
+    limpiarCamposCliente()
+
+
+def eliminarCliente():
+    seleccionado = tablaClientes.selection()
+
+    if seleccionado:
+        indice = tablaClientes.index(seleccionado)
+        clientes.pop(indice)
+        actualizarTablaClientes()
+
+
+def editarCliente():
+    seleccionado = tablaClientes.selection()
+
+    if not seleccionado:
+        return
+
+    datos = tablaClientes.item(seleccionado)["values"]
+    limpiarCamposCliente()
+    txtDni.insert(0, datos[0])
+    txtCliente.insert(0, datos[1])
+    txtTelefono.insert(0, datos[2])
+
+
+def modificarCliente():
+    seleccionado = tablaClientes.selection()
+
+    if not seleccionado:
+        return
+
+    dni = txtDni.get()
+    nombre = txtCliente.get()
+    telefono = txtTelefono.get()
+
+    if dni == "" or nombre == "" or telefono == "":
+        messagebox.showerror("Error", "Complete todos los campos")
+        return
+
+    if not dni.isdigit():
+        messagebox.showerror("Error", "DNI inválido")
+        return
+
+    if not validarNombre(nombre):
+        messagebox.showerror("Error", "Nombre inválido")
+        return
+
+    if not telefono.isdigit():
+        messagebox.showerror("Error", "Teléfono inválido")
+        return
+
+    indice = tablaClientes.index(seleccionado)
+    clientes[indice].dni = dni
+    clientes[indice].nombre = nombre
+    clientes[indice].telefono = telefono
+
+    actualizarTablaClientes()
+    lstSalidaClientes.insert(0, f"Cliente {nombre} modificado correctamente")
+    limpiarCamposCliente()
+
+
+def abrirClientes():
+    global txtDni, txtCliente, txtTelefono, tablaClientes, lstSalidaClientes
+
+    limpiarPanel()
+
+    titulo = tk.Label(
+        panel,
+        text="MANTENIMIENTO DE CLIENTES",
+        fg="purple",
+        font=("Arial", 16, "bold")
+    )
+    titulo.place(x=250, y=20)
+
+    tk.Label(panel, text="DNI :", fg="purple").place(x=500, y=80)
+    txtDni = tk.Entry(panel, width=15)
+    txtDni.place(x=570, y=80)
+
+    tk.Label(panel, text="Nombre :", fg="purple").place(x=80, y=120)
+    txtCliente = tk.Entry(panel, width=40)
+    txtCliente.place(x=160, y=120)
+
+    tk.Label(panel, text="Teléfono :", fg="purple").place(x=80, y=170)
+    txtTelefono = tk.Entry(panel, width=20)
+    txtTelefono.place(x=160, y=170)
+
+    tk.Button(panel, text="REGISTRAR", width=15, command=registrarCliente).place(x=80, y=240)
+    tk.Button(panel, text="ELIMINAR", width=15, command=eliminarCliente).place(x=260, y=240)
+    tk.Button(panel, text="EDITAR", width=15, command=editarCliente).place(x=440, y=240)
+    tk.Button(panel, text="MODIFICAR", width=15, command=modificarCliente).place(x=620, y=240)
+
+    columnas = ("DNI", "Nombre", "Telefono")
+    tablaClientes = ttk.Treeview(panel, columns=columnas, show="headings", height=8)
+
+    for col in columnas:
+        tablaClientes.heading(col, text=col)
+
+    tablaClientes.column("DNI", width=180)
+    tablaClientes.column("Nombre", width=280)
+    tablaClientes.column("Telefono", width=180)
+    tablaClientes.place(x=80, y=300)
+
+    lstSalidaClientes = tk.Listbox(panel, width=90, height=4)
+    lstSalidaClientes.place(x=40, y=500)
+
+    actualizarTablaClientes()
+
+
+# ====================================
+# VENTAS
+# ====================================
+def abrirVentas():
+    limpiarPanel()
+
+    titulo = tk.Label(panel, text="SISTEMA DE VENTAS", fg="green", font=("Arial", 16, "bold"))
+    titulo.place(x=320, y=20)
+
+    tk.Label(panel, text="Código Producto :").place(x=60, y=70)
+    txtCodVenta = tk.Entry(panel, width=18)
+    txtCodVenta.place(x=190, y=70)
+
+    tk.Label(panel, text="Precio :").place(x=330, y=70)
+    txtPrecioVenta = tk.Entry(panel, width=15)
+    txtPrecioVenta.place(x=390, y=70)
+
+    tk.Label(panel, text="Cantidad :").place(x=520, y=70)
+    txtCantidad = tk.Entry(panel, width=15)
+    txtCantidad.place(x=600, y=70)
+
+    tk.Label(panel, text="Cliente :").place(x=60, y=105)
+    cboClienteVenta = ttk.Combobox(panel, width=35, state="readonly")
+    cboClienteVenta.place(x=190, y=105)
+
+    opcionesClientes = []
+    for cliente in clientes:
+        opcionesClientes.append(f"{cliente.dni} - {cliente.nombre}")
+
+    cboClienteVenta["values"] = opcionesClientes
+    if len(opcionesClientes) > 0:
+        cboClienteVenta.current(0)
+
+    lblTotal = tk.Label(panel, text="Total General: S/ 0.00", fg="green", font=("Arial", 12, "bold"))
+    lblTotal.place(x=650, y=520)
+
+    # Tabla de productos registrados
+    tk.Label(panel, text="PRODUCTOS REGISTRADOS", fg="green", font=("Arial", 11, "bold")).place(x=60, y=140)
+
+    columnasProductos = ("Codigo", "Nombre", "Precio", "Stock")
+    tablaProductosVenta = ttk.Treeview(panel, columns=columnasProductos, show="headings", height=6)
+
+    for col in columnasProductos:
+        tablaProductosVenta.heading(col, text=col)
+
+    tablaProductosVenta.column("Codigo", width=100)
+    tablaProductosVenta.column("Nombre", width=220)
+    tablaProductosVenta.column("Precio", width=120)
+    tablaProductosVenta.column("Stock", width=100)
+    tablaProductosVenta.place(x=60, y=170)
+
+    # Tabla de ventas realizadas
+    tk.Label(panel, text="VENTAS REGISTRADAS", fg="blue", font=("Arial", 11, "bold")).place(x=60, y=330)
+
+    columnasVentas = ("Codigo", "Producto", "Cliente", "Precio", "Cantidad", "Subtotal")
+    tablaRegistroVentas = ttk.Treeview(panel, columns=columnasVentas, show="headings", height=6)
+
+    for col in columnasVentas:
+        tablaRegistroVentas.heading(col, text=col)
+
+    tablaRegistroVentas.column("Codigo", width=90)
+    tablaRegistroVentas.column("Producto", width=180)
+    tablaRegistroVentas.column("Cliente", width=180)
+    tablaRegistroVentas.column("Precio", width=100)
+    tablaRegistroVentas.column("Cantidad", width=90)
+    tablaRegistroVentas.column("Subtotal", width=120)
+    tablaRegistroVentas.place(x=60, y=360)
+
+    def actualizarTablaProductosVenta():
+        for item in tablaProductosVenta.get_children():
+            tablaProductosVenta.delete(item)
+
+        for producto in productos:
+            tablaProductosVenta.insert(
+                "",
+                "end",
+                values=(producto.codigo, producto.nombre, producto.precio, producto.stock)
+            )
+
+    def actualizarTablaRegistroVentas():
+        for item in tablaRegistroVentas.get_children():
+            tablaRegistroVentas.delete(item)
+
+        total = 0
+
+        for venta in ventas:
+            tablaRegistroVentas.insert(
+                "",
+                "end",
+                values=(venta.codigo, venta.producto, venta.cliente, venta.precio, venta.cantidad, venta.subtotal)
+            )
+            total += venta.subtotal
+
+        lblTotal.config(text=f"Total General: S/ {total:.2f}")
+
+    def seleccionarProducto(event):
+        seleccionado = tablaProductosVenta.selection()
+        if seleccionado:
+            datos = tablaProductosVenta.item(seleccionado)["values"]
+            txtCodVenta.delete(0, tk.END)
+            txtCodVenta.insert(0, datos[0])
+
+            txtPrecioVenta.delete(0, tk.END)
+            txtPrecioVenta.insert(0, datos[2])
+
+    tablaProductosVenta.bind("<<TreeviewSelect>>", seleccionarProducto)
+
+    def vender():
+        codigo = txtCodVenta.get()
+        precio = txtPrecioVenta.get()
+        cantidad = txtCantidad.get()
+        clienteSeleccionado = cboClienteVenta.get()
+
+        if codigo == "" or precio == "" or cantidad == "" or clienteSeleccionado == "":
+            messagebox.showerror("Error", "Complete todos los campos")
+            return
+
+        nombreCliente = clienteSeleccionado.split(" - ", 1)[1]
+
+        try:
+            precio = float(precio)
+            cantidad = int(cantidad)
+            encontrado = False
+
+            for producto in productos:
+                if str(producto.codigo) == codigo:
+                    if cantidad > producto.stock:
+                        messagebox.showerror("Error", "Stock insuficiente")
+                    else:
+                        subtotal = precio * cantidad
+
+                        venta = Venta(
+                            producto.codigo,
+                            producto.nombre,
+                            nombreCliente,
+                            precio,
+                            cantidad,
+                            subtotal
+                        )
+                        ventas.append(venta)
+
+                        producto.stock = producto.stock - cantidad
+
+                        actualizarTablaProductosVenta()
+                        actualizarTablaRegistroVentas()
+
+                        messagebox.showinfo("Venta", "Venta registrada correctamente")
+
+                        txtCodVenta.delete(0, tk.END)
+                        txtPrecioVenta.delete(0, tk.END)
+                        txtCantidad.delete(0, tk.END)
+                        if len(opcionesClientes) > 0:
+                            cboClienteVenta.current(0)
+
+                    encontrado = True
+                    break
+
+            if encontrado == False:
+                messagebox.showerror("Error", "Producto no encontrado")
+
+        except:
+            messagebox.showerror("Error", "Precio o cantidad inválidos")
+
+    def limpiarVenta():
+        txtCodVenta.delete(0, tk.END)
+        txtPrecioVenta.delete(0, tk.END)
+        txtCantidad.delete(0, tk.END)
+        if len(opcionesClientes) > 0:
+            cboClienteVenta.current(0)
+        txtCodVenta.focus()
+
+    tk.Button(panel, text="REALIZAR VENTA", width=20, command=vender).place(x=700, y=67)
+    tk.Button(panel, text="LIMPIAR", width=15, command=limpiarVenta).place(x=700, y=105)
+
+    actualizarTablaProductosVenta()
+    actualizarTablaRegistroVentas()
+
+
+# ====================================
+# REPORTE GENERAL
+# ====================================
+
+def abrirReporteGeneral():
+    limpiarPanel()
+
+    titulo = tk.Label(
+        panel,
+        text="REPORTE GENERAL",
+        fg="blue",
+        font=("Arial", 16, "bold")
+    )
+    titulo.place(x=420, y=15)
+
+    # ====================================
+    # BUSQUEDA POR CLIENTE
+    # ====================================
+    tk.Label(
+        panel,
+        text="Buscar cliente:",
+        fg="brown",
+        font=("Arial", 10, "bold")
+    ).place(x=40, y=50)
+
+    cboBuscarCliente = ttk.Combobox(panel, width=35, state="readonly")
+    cboBuscarCliente.place(x=145, y=50)
+
+    opcionesClientes = []
+    for cliente in clientes:
+        opcionesClientes.append(cliente.nombre)
+
+    cboBuscarCliente["values"] = opcionesClientes
+
+    lblResumen = tk.Label(
+        panel,
+        text="",
+        fg="green",
+        font=("Arial", 11, "bold")
+    )
+    lblResumen.place(x=120, y=80)
+
+    # ====================================
+    # CUADRO 1: PRODUCTOS Y CLIENTES
+    # ====================================
+    lblDatos = tk.Label(
+        panel,
+        text="PRODUCTOS Y CLIENTES",
+        fg="purple",
+        font=("Arial", 12, "bold")
+    )
+    lblDatos.place(x=40, y=115)
+
+    columnasDatos = ("Tipo", "Cliente", "DNI", "Teléfono")
+    tablaDatos = ttk.Treeview(panel, columns=columnasDatos, show="headings", height=8)
+
+    for col in columnasDatos:
+        tablaDatos.heading(col, text=col)
+
+    tablaDatos.column("Tipo", width=100)
+    tablaDatos.column("Cliente", width=300)
+    tablaDatos.column("DNI", width=180)
+    tablaDatos.column("Teléfono", width=180)
+    tablaDatos.place(x=40, y=145)
+
+    # ====================================
+    # CUADRO 2: VENTAS
+    # ====================================
+    lblVentas = tk.Label(
+        panel,
+        text="VENTAS REGISTRADAS",
+        fg="green",
+        font=("Arial", 12, "bold")
+    )
+    lblVentas.place(x=40, y=390)
+
+    columnasVentas = ("Código", "Producto", "Cliente", "Precio", "Cantidad", "Subtotal")
+    tablaVentas = ttk.Treeview(panel, columns=columnasVentas, show="headings", height=9)
+
+    for col in columnasVentas:
+        tablaVentas.heading(col, text=col)
+
+    tablaVentas.column("Código", width=100)
+    tablaVentas.column("Producto", width=230)
+    tablaVentas.column("Cliente", width=220)
+    tablaVentas.column("Precio", width=140)
+    tablaVentas.column("Cantidad", width=120)
+    tablaVentas.column("Subtotal", width=160)
+    tablaVentas.place(x=40, y=420)
+
+    marcoTotal = tk.LabelFrame(
+        panel,
+        text="RESUMEN DE VENTAS",
+        fg="blue",
+        font=("Arial", 11, "bold"),
+        width=500,
+        height=70
+    )
+    marcoTotal.place(x=300, y=680)
+
+    lblTotalReporte = tk.Label(
+        marcoTotal,
+        text="",
+        fg="blue",
+        font=("Arial", 14, "bold")
+    )
+    lblTotalReporte.place(x=70, y=18)
+
+    def cargarReporte(clienteBuscado=""):
+        for item in tablaDatos.get_children():
+            tablaDatos.delete(item)
+
+        for item in tablaVentas.get_children():
+            tablaVentas.delete(item)
+
+        totalVentas = 0
+        cantidadVentas = 0
+
+        if clienteBuscado == "":
+            lblDatos.config(text="CLIENTES REGISTRADOS")
+
+            clientesFiltrados = clientes
+            ventasFiltradas = ventas
+        else:
+            lblDatos.config(text="CLIENTE ENCONTRADO")
+            clientesFiltrados = []
+            for cliente in clientes:
+                if cliente.nombre == clienteBuscado:
+                    clientesFiltrados.append(cliente)
+
+            ventasFiltradas = []
+            for venta in ventas:
+                if venta.cliente == clienteBuscado:
+                    ventasFiltradas.append(venta)
+
+        for cliente in clientesFiltrados:
+            tablaDatos.insert(
+                "",
+                "end",
+                values=(
+                    "Cliente",
+                    cliente.nombre,
+                    cliente.dni,
+                    cliente.telefono
+                )
+            )
+
+        for venta in ventasFiltradas:
+            tablaVentas.insert(
+                "",
+                "end",
+                values=(
+                    venta.codigo,
+                    venta.producto,
+                    venta.cliente,
+                    f"S/ {venta.precio:.2f}",
+                    venta.cantidad,
+                    f"S/ {venta.subtotal:.2f}"
+                )
+            )
+            totalVentas += venta.subtotal
+            cantidadVentas += 1
+
+        if clienteBuscado == "":
+            lblResumen.config(
+                text=f"Productos: {len(productos)}   Clientes: {len(clientes)}   Ventas: {len(ventas)}   Total vendido: S/ {totalVentas:.2f}"
+            )
+        else:
+            lblResumen.config(
+                text=f"Cliente: {clienteBuscado}   Ventas: {cantidadVentas}   Total vendido: S/ {totalVentas:.2f}"
+            )
+
+        lblTotalReporte.config(text=f"TOTAL GENERAL DE VENTAS: S/ {totalVentas:.2f}")
+
+    def buscarCliente():
+        clienteBuscado = cboBuscarCliente.get()
+        if clienteBuscado == "":
+            messagebox.showerror("Error", "Seleccione un cliente")
+            return
+        cargarReporte(clienteBuscado)
+
+    def mostrarTodos():
+        cboBuscarCliente.set("")
+        cargarReporte()
+
+    tk.Button(panel, text="BUSCAR", width=12, command=buscarCliente).place(x=390, y=47)
+    tk.Button(panel, text="MOSTRAR TODOS", width=15, command=mostrarTodos).place(x=500, y=47)
+
+    cargarReporte()
+
+
+# ====================================
+# AYUDA
+# ====================================
+def mostrarAcercaDe():
+    mensaje = (
+        "PROYECTO FINAL: SISTEMA DE VENTAS\n\n"
+        "Versión del software: 2.0\n\n"
+        "Desarrollado con:\n"
+        "- Python 3.14.5\n"
+        "- Tkinter\n\n"
+        "Institución: CERTUS\n\n"
+        "Carrera: Diseño y Desarrollo de Software\n\n"
+        "Desarrollado por:\n"
+        "Alex Jose Quispe Arias"
+    )
+    messagebox.showinfo("Acerca del Sistema", mensaje)
+
+
+# ====================================
+# VENTANA PRINCIPAL
+# ====================================
+frm = tk.Tk()
+frm.title("Sistema de Ventas")
+frm.geometry("1200x850")
+frm.resizable(False, False)
+
+# ====================================
+# MENÚ
+# ====================================
+barra = tk.Menu(frm)
+
+menuSistema = tk.Menu(barra, tearoff=0)
+menuSistema.add_command(label="Inicio", command=mostrarInicio)
+menuSistema.add_command(label="Salir", command=frm.quit)
+barra.add_cascade(label="Sistema", menu=menuSistema)
+
+menuMantenimiento = tk.Menu(barra, tearoff=0)
+menuMantenimiento.add_command(label="Productos", command=abrirProductos)
+menuMantenimiento.add_command(label="Clientes", command=abrirClientes)
+barra.add_cascade(label="Mantenimiento", menu=menuMantenimiento)
+
+menuVentas = tk.Menu(barra, tearoff=0)
+menuVentas.add_command(label="Realizar Venta", command=abrirVentas)
+barra.add_cascade(label="Ventas", menu=menuVentas)
+
+menuReportes = tk.Menu(barra, tearoff=0)
+menuReportes.add_command(label="Reporte General", command=abrirReporteGeneral)
+barra.add_cascade(label="Reportes", menu=menuReportes)
+
+menuAyuda = tk.Menu(barra, tearoff=0)
+menuAyuda.add_command(label="Acerca del Sistema", command=mostrarAcercaDe)
+barra.add_cascade(label="Ayuda", menu=menuAyuda)
+
+frm.config(menu=barra)
+
+# ====================================
+# PANEL
+# ====================================
+panel = tk.Frame(
+    frm,
+    width=1150,
+    height=780,
+    bd=3,
+    relief="solid"
+)
+panel.place(x=20, y=20)
+
+mostrarInicio()
+frm.mainloop()
